@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "309592984767",
+    "project_id": "healthtimeline-ffc99",
+    "storage_bucket": "healthtimeline-ffc99.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:309592984767:android:7a98d819856b5e30734a0a",
+        "android_client_info": {
+          "package_name": "com.example.health_timeline"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBK4QFCZzbX1uGF7QITZ80n9MGkmRPibts"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
