@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../authentication/login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -41,9 +42,16 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               FilledButton(
-                onPressed: () {},
-                child: const Text('Get Started'),
-              ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      ),
+    );
+  },
+  child: const Text('Get Started'),
+),
             ],
           ),
         ),
