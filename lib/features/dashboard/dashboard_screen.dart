@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../authentication/login_screen.dart';
+import '../health_entry/add_health_entry_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -43,6 +44,7 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
+
             const Text(
               'Welcome to HealthTimeLine',
               style: TextStyle(
@@ -51,7 +53,9 @@ class DashboardScreen extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
+
             const SizedBox(height: 12),
+
             Text(
               user?.email ?? 'User',
               style: const TextStyle(
@@ -59,7 +63,9 @@ class DashboardScreen extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
+
             const SizedBox(height: 32),
+
             const Text(
               'Your health dashboard will appear here.',
               style: TextStyle(
@@ -69,6 +75,19 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddHealthEntryScreen(),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Add Entry'),
       ),
     );
   }
