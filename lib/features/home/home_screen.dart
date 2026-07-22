@@ -44,20 +44,32 @@ class _HomeScreenState extends State<HomeScreen> {
       for (final entry in entries) {
         final data = entry.data() as Map<String, dynamic>;
 
-        final type = data['type'] ?? '';
-        final title = data['title'] ?? '';
+        final type = data['type'] as String? ?? '';
 
         switch (type) {
           case 'Mood':
-            mood = title;
+            mood =
+                data['mood'] as String? ??
+                data['title'] as String? ??
+                'Not recorded';
             break;
 
           case 'Sleep':
-            sleep = title;
+            sleep =
+                data['hours']?.toString() ??
+                data['title'] as String? ??
+                'Not recorded';
             break;
 
           case 'Water':
-            waterTotal += _extractNumber(title);
+            final amount = data['amount'];
+
+            if (amount is int) {
+              waterTotal += amount;
+            } else {
+              final title = data['title'] as String? ?? '';
+              waterTotal += _extractNumber(title);
+            }
             break;
 
           case 'Medication':
@@ -72,10 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _moodValue = mood;
         _sleepValue = sleep;
         _waterValue = '$waterTotal ml today';
-        _medicationValue = medicationCount == 0
-            ? 'No medication'
-            : '$medicationCount recorded';
-
+        _medicationValue =
+            medicationCount == 0
+                ? 'No medication'
+                : '$medicationCount recorded';
         _isLoadingSummary = false;
       });
     } catch (_) {
@@ -90,9 +102,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int _extractNumber(String text) {
     final match = RegExp(r'\d+').firstMatch(text);
 
-    if (match == null) return 0;
+    if (match == null) {
+      return 0;
+    }
 
-    return int.tryParse(match.group(0)!) ?? 0;
+    return int.tryParse(match.group(0) ?? '') ?? 0;
   }
 
   Future<void> _logout(BuildContext context) async {
@@ -114,8 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     final displayName =
-        (user?.displayName != null && user!.displayName!.trim().isNotEmpty)
-            ? user.displayName!
+        user?.displayName?.trim().isNotEmpty == true
+            ? user!.displayName!
             : 'Welcome';
 
     return Scaffold(
@@ -126,17 +140,13 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
             onPressed: () => _logout(context),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          110,
-        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -147,9 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.textSecondary,
               ),
             ),
-
             const SizedBox(height: 6),
-
             Text(
               displayName,
               style: const TextStyle(
@@ -158,9 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.textPrimary,
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
               user?.email ?? '',
               style: const TextStyle(
@@ -168,9 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.textSecondary,
               ),
             ),
-
             const SizedBox(height: 10),
-
             const Text(
               "Let's take care of your health today.",
               style: TextStyle(
@@ -178,19 +182,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.textSecondary,
               ),
             ),
-
             const SizedBox(height: 30),
-
             const Text(
               "Today's Summary",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
-
             const SizedBox(height: 16),
-
             if (_isLoadingSummary)
               const Center(
                 child: Padding(
@@ -218,9 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
               Row(
                 children: [
                   Expanded(
@@ -241,19 +240,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ],
-
             const SizedBox(height: 30),
-
             const Text(
               'Recent Activity',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
-
             const SizedBox(height: 16),
-
             StreamBuilder<QuerySnapshot>(
               stream: _firestoreService.getRecentEntries(),
               builder: (context, snapshot) {
@@ -263,8 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                if (snapshot.connectionState ==
-                    ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(),
                   );
@@ -282,20 +277,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 return ListView.builder(
                   shrinkWrap: true,
-                  physics:
-                      const NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data =
                         docs[index].data() as Map<String, dynamic>;
 
-                    return HealthEntryCard(
-                      type: data['type'] ?? '',
-                      title: data['title'] ?? '',
-                      description:
-                          data['description'] ?? '',
-                      createdAt:
-                          data['createdAt'] as Timestamp?,
+                    return HealthEntryCard.fromData(
+                      data: data,
                     );
                   },
                 );
@@ -310,8 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  const AddHealthEntryScreen(),
+              builder: (_) => const AddHealthEntryScreen(),
             ),
           );
 

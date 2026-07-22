@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../widgets/entry_widgets/emoji_option_card.dart';
 
 class MoodEntryScreen extends StatefulWidget {
   const MoodEntryScreen({super.key});
@@ -70,8 +71,8 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
           .collection('health_entries')
           .add({
         'type': 'Mood',
-        'title': _selectedMood,
-        'description': _notesController.text.trim(),
+        'mood': _selectedMood,
+        'notes': _notesController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'userId': user.uid,
       });
@@ -79,7 +80,6 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
       if (!mounted) return;
 
       _showMessage('Mood saved successfully.');
-
       Navigator.pop(context, true);
     } on FirebaseException catch (error) {
       _showMessage(error.message ?? 'Unable to save your mood.');
@@ -109,12 +109,7 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          40,
-        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -144,57 +139,16 @@ class _MoodEntryScreenState extends State<MoodEntryScreen> {
               children: _moods.map((mood) {
                 final label = mood['label']!;
                 final emoji = mood['emoji']!;
-                final isSelected = _selectedMood == label;
 
-                return InkWell(
+                return EmojiOptionCard(
+                  emoji: emoji,
+                  label: label,
+                  isSelected: _selectedMood == label,
                   onTap: () {
                     setState(() {
                       _selectedMood = label;
                     });
                   },
-                  borderRadius: BorderRadius.circular(18),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    width: 110,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 18,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.16)
-                          : AppColors.surface,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryDark
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          emoji,
-                          style: const TextStyle(
-                            fontSize: 34,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.w500,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               }).toList(),
             ),

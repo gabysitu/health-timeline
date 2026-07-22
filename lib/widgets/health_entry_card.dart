@@ -17,6 +17,29 @@ class HealthEntryCard extends StatelessWidget {
     required this.createdAt,
   });
 
+  factory HealthEntryCard.fromData({
+    Key? key,
+    required Map<String, dynamic> data,
+  }) {
+    final type = data['type'] as String? ?? '';
+
+    String title = data['title'] as String? ?? '';
+    String description = data['description'] as String? ?? '';
+
+    if (type == 'Mood') {
+      title = data['mood'] as String? ?? title;
+      description = data['notes'] as String? ?? description;
+    }
+
+    return HealthEntryCard(
+      key: key,
+      type: type,
+      title: title,
+      description: description,
+      createdAt: data['createdAt'] as Timestamp?,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -53,7 +76,7 @@ class HealthEntryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    title,
+                    title.isEmpty ? 'Health entry' : title,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
