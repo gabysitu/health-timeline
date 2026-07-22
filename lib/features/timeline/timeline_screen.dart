@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../models/health_entry.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/health_entry_card.dart';
 
@@ -18,14 +19,20 @@ class TimelineScreen extends StatelessWidget {
         title: const Text('Timeline'),
         centerTitle: true,
       ),
-      body: StreamBuilder<QuerySnapshot>(
+      body: StreamBuilder<List<HealthEntry>>(
         stream: firestoreService.getRecentEntries(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(
-              child: Text(
-                'Something went wrong while loading your timeline.',
-                textAlign: TextAlign.center,
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Something went wrong while loading your timeline.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             );
           }
@@ -36,9 +43,9 @@ class TimelineScreen extends StatelessWidget {
             );
           }
 
-          final docs = snapshot.data?.docs ?? [];
+          final entries = snapshot.data ?? [];
 
-          if (docs.isEmpty) {
+          if (entries.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
@@ -55,16 +62,18 @@ class TimelineScreen extends StatelessWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(24),
-            itemCount: docs.length,
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+            itemCount: entries.length,
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
+              final entry = entries[index];
 
               return HealthEntryCard(
-                type: data['type'] ?? '',
-                title: data['title'] ?? '',
-                description: data['description'] ?? '',
-                createdAt: data['createdAt'] as Timestamp?,
+                type: entry.type,
+                title: entry.title,
+                description: entry.description,
+                createdAt: entry.createdAt == null
+                    ? null
+                    : Timestamp.fromDate(entry.createdAt!),
               );
             },
           );

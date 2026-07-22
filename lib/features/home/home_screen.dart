@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../models/health_entry.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/health_entry_card.dart';
 import '../../widgets/summary_card.dart';
@@ -42,33 +43,38 @@ class _HomeScreenState extends State<HomeScreen> {
       int medicationCount = 0;
 
       for (final entry in entries) {
-        final data = entry.data() as Map<String, dynamic>;
-
-        final type = data['type'] as String? ?? '';
-
-        switch (type) {
+        switch (entry.type) {
           case 'Mood':
             mood =
-                data['mood'] as String? ??
-                data['title'] as String? ??
+                entry.data['mood'] as String? ??
+                entry.data['title'] as String? ??
                 'Not recorded';
             break;
 
           case 'Sleep':
-            sleep =
-                data['hours']?.toString() ??
-                data['title'] as String? ??
-                'Not recorded';
+            final hours = entry.data['hours'];
+
+            if (hours != null) {
+              sleep = '$hours hours';
+            } else {
+              sleep =
+                  entry.data['title'] as String? ??
+                  'Not recorded';
+            }
             break;
 
           case 'Water':
-            final amount = data['amount'];
+            final amount = entry.data['amount'];
 
             if (amount is int) {
               waterTotal += amount;
+            } else if (amount is double) {
+              waterTotal += amount.round();
             } else {
-              final title = data['title'] as String? ?? '';
-              waterTotal += _extractNumber(title);
+              final oldTitle =
+                  entry.data['title'] as String? ?? '';
+
+              waterTotal += _extractNumber(oldTitle);
             }
             break;
 
@@ -84,10 +90,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _moodValue = mood;
         _sleepValue = sleep;
         _waterValue = '$waterTotal ml today';
-        _medicationValue =
-            medicationCount == 0
-                ? 'No medication'
-                : '$medicationCount recorded';
+        _medicationValue = medicationCount == 0
+            ? 'No medication'
+            : '$medicationCount recorded';
         _isLoadingSummary = false;
       });
     } catch (_) {
@@ -146,7 +151,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+        padding: const EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          110,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -192,6 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
             if (_isLoadingSummary)
               const Center(
                 child: Padding(
@@ -240,6 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ],
+
             const SizedBox(height: 30),
             const Text(
               'Recent Activity',
@@ -250,7 +262,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
+
+            StreamBuilder<List<HealthEntry>>(
               stream: _firestoreService.getRecentEntries(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -259,15 +272,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(),
                   );
                 }
 
-                final docs = snapshot.data?.docs ?? [];
+                final entries = snapshot.data ?? [];
 
-                if (docs.isEmpty) {
+                if (entries.isEmpty) {
                   return const Card(
                     child: ListTile(
                       title: Text('No health entries yet'),
@@ -277,14 +291,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 return ListView.builder(
                   shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: docs.length,
+                  physics:
+                      const NeverScrollableScrollPhysics(),
+                  itemCount: entries.length,
                   itemBuilder: (context, index) {
-                    final data =
-                        docs[index].data() as Map<String, dynamic>;
+                    final entry = entries[index];
 
-                    return HealthEntryCard.fromData(
-                      data: data,
+                    return HealthEntryCard(
+                      type: entry.type,
+                      title: entry.title,
+                      description: entry.description,
+                      createdAt: entry.createdAt == null
+                          ? null
+                          : Timestamp.fromDate(
+                              entry.createdAt!,
+                            ),
                     );
                   },
                 );
@@ -296,14 +317,17 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         onPressed: () async {
-          await Navigator.push(
+          final saved = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) => const AddHealthEntryScreen(),
+              builder: (_) =>
+                  const AddHealthEntryScreen(),
             ),
           );
 
-          await _loadTodaySummary();
+          if (saved == true) {
+            await _loadTodaySummary();
+          }
         },
         icon: const Icon(Icons.add),
         label: const Text('Add Entry'),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'medication_entry_screen.dart';
 import 'mood_entry_screen.dart';
+import 'symptom_entry_screen.dart';
+import 'water_entry_screen.dart';
 
 class AddHealthEntryScreen extends StatelessWidget {
   const AddHealthEntryScreen({super.key});
@@ -19,11 +22,13 @@ class AddHealthEntryScreen extends StatelessWidget {
         title: 'Symptom',
         subtitle: 'Track a symptom or discomfort',
         icon: Icons.health_and_safety_outlined,
+        isAvailable: true,
       ),
       const _EntryTypeData(
         title: 'Medication',
         subtitle: 'Record a medication or dose',
         icon: Icons.medication_outlined,
+        isAvailable: true,
       ),
       const _EntryTypeData(
         title: 'Sleep',
@@ -34,6 +39,7 @@ class AddHealthEntryScreen extends StatelessWidget {
         title: 'Water',
         subtitle: 'Track your water intake',
         icon: Icons.water_drop_outlined,
+        isAvailable: true,
       ),
       const _EntryTypeData(
         title: 'Note',
@@ -83,24 +89,52 @@ class AddHealthEntryScreen extends StatelessWidget {
 
               return _EntryTypeCard(
                 data: entryType,
-                onTap: () {
+                onTap: () async {
+                  bool? saved;
+
                   if (entryType.title == 'Mood') {
-                    Navigator.push(
+                    saved = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const MoodEntryScreen(),
                       ),
                     );
+                  } else if (entryType.title == 'Symptom') {
+                    saved = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SymptomEntryScreen(),
+                      ),
+                    );
+                  } else if (entryType.title == 'Medication') {
+                    saved = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const MedicationEntryScreen(),
+                      ),
+                    );
+                  } else if (entryType.title == 'Water') {
+                    saved = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const WaterEntryScreen(),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '${entryType.title} tracking is coming next.',
+                        ),
+                      ),
+                    );
                     return;
                   }
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '${entryType.title} tracking is coming next.',
-                      ),
-                    ),
-                  );
+                  if (saved == true && context.mounted) {
+                    Navigator.pop(context, true);
+                  }
                 },
               );
             },
