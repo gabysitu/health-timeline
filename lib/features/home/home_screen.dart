@@ -9,8 +9,91 @@ import '../../widgets/summary_card.dart';
 import '../authentication/login_screen.dart';
 import '../health_entry/add_health_entry_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final FirestoreService _firestoreService = FirestoreService();
+
+  String _moodValue = 'Not recorded';
+  String _sleepValue = 'Not recorded';
+  String _waterValue = '0 ml today';
+  String _medicationValue = 'No medication';
+
+  bool _isLoadingSummary = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTodaySummary();
+  }
+
+  Future<void> _loadTodaySummary() async {
+    try {
+      final entries = await _firestoreService.getTodayEntries();
+
+      String mood = 'Not recorded';
+      String sleep = 'Not recorded';
+      int waterTotal = 0;
+      int medicationCount = 0;
+
+      for (final entry in entries) {
+        final data = entry.data() as Map<String, dynamic>;
+
+        final type = data['type'] ?? '';
+        final title = data['title'] ?? '';
+
+        switch (type) {
+          case 'Mood':
+            mood = title;
+            break;
+
+          case 'Sleep':
+            sleep = title;
+            break;
+
+          case 'Water':
+            waterTotal += _extractNumber(title);
+            break;
+
+          case 'Medication':
+            medicationCount++;
+            break;
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _moodValue = mood;
+        _sleepValue = sleep;
+        _waterValue = '$waterTotal ml today';
+        _medicationValue = medicationCount == 0
+            ? 'No medication'
+            : '$medicationCount recorded';
+
+        _isLoadingSummary = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingSummary = false;
+      });
+    }
+  }
+
+  int _extractNumber(String text) {
+    final match = RegExp(r'\d+').firstMatch(text);
+
+    if (match == null) return 0;
+
+    return int.tryParse(match.group(0)!) ?? 0;
+  }
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -29,7 +112,11 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final firestoreService = FirestoreService();
+
+    final displayName =
+        (user?.displayName != null && user!.displayName!.trim().isNotEmpty)
+            ? user.displayName!
+            : 'Welcome';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -38,14 +125,18 @@ class HomeScreen extends StatelessWidget {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () => _logout(context),
             icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
+            onPressed: () => _logout(context),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          110,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -56,16 +147,30 @@ class HomeScreen extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 6),
+
             Text(
-              user?.email ?? '',
+              displayName,
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 30,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 4),
+
+            Text(
+              user?.email ?? '',
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textSecondary,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
             const Text(
               "Let's take care of your health today.",
               style: TextStyle(
@@ -73,67 +178,84 @@ class HomeScreen extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
+
             const SizedBox(height: 30),
+
             const Text(
               "Today's Summary",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
               ),
             ),
+
             const SizedBox(height: 16),
-            const Row(
-              children: [
-                Expanded(
-                  child: SummaryCard(
-                    icon: Icons.mood,
-                    title: 'Mood',
-                    value: '--',
-                  ),
+
+            if (_isLoadingSummary)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: SummaryCard(
-                    icon: Icons.bedtime,
-                    title: 'Sleep',
-                    value: '--',
+              )
+            else ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: SummaryCard(
+                      icon: Icons.mood,
+                      title: 'Mood',
+                      value: _moodValue,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Row(
-              children: [
-                Expanded(
-                  child: SummaryCard(
-                    icon: Icons.water_drop,
-                    title: 'Water',
-                    value: '0 ml',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SummaryCard(
+                      icon: Icons.bedtime,
+                      title: 'Sleep',
+                      value: _sleepValue,
+                    ),
                   ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: SummaryCard(
-                    icon: Icons.medication,
-                    title: 'Medication',
-                    value: '--',
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: SummaryCard(
+                      icon: Icons.water_drop,
+                      title: 'Water',
+                      value: _waterValue,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SummaryCard(
+                      icon: Icons.medication,
+                      title: 'Medication',
+                      value: _medicationValue,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 30),
+
             const Text(
               'Recent Activity',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
               ),
             ),
+
             const SizedBox(height: 16),
+
             StreamBuilder<QuerySnapshot>(
-              stream: firestoreService.getRecentEntries(),
+              stream: _firestoreService.getRecentEntries(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return const Center(
@@ -141,7 +263,8 @@ class HomeScreen extends StatelessWidget {
                   );
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(),
                   );
@@ -159,7 +282,8 @@ class HomeScreen extends StatelessWidget {
 
                 return ListView.builder(
                   shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
+                  physics:
+                      const NeverScrollableScrollPhysics(),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data =
@@ -168,8 +292,10 @@ class HomeScreen extends StatelessWidget {
                     return HealthEntryCard(
                       type: data['type'] ?? '',
                       title: data['title'] ?? '',
-                      description: data['description'] ?? '',
-                      createdAt: data['createdAt'] as Timestamp?,
+                      description:
+                          data['description'] ?? '',
+                      createdAt:
+                          data['createdAt'] as Timestamp?,
                     );
                   },
                 );
@@ -180,13 +306,16 @@ class HomeScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const AddHealthEntryScreen(),
+              builder: (_) =>
+                  const AddHealthEntryScreen(),
             ),
           );
+
+          await _loadTodaySummary();
         },
         icon: const Icon(Icons.add),
         label: const Text('Add Entry'),

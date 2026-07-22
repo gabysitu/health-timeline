@@ -1,164 +1,198 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'mood_entry_screen.dart';
 
-class AddHealthEntryScreen extends StatefulWidget {
+class AddHealthEntryScreen extends StatelessWidget {
   const AddHealthEntryScreen({super.key});
 
   @override
-  State<AddHealthEntryScreen> createState() => _AddHealthEntryScreenState();
-}
-
-class _AddHealthEntryScreenState extends State<AddHealthEntryScreen> {
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-
-  String _selectedType = 'Mood';
-  bool _isSaving = false;
-
-  final List<String> _entryTypes = [
-    'Mood',
-    'Symptom',
-    'Medication',
-    'Sleep',
-    'Water',
-    'Note',
-  ];
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveEntry() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final title = _titleController.text.trim();
-    final description = _descriptionController.text.trim();
-
-    if (user == null) {
-      _showMessage('You must be logged in to save an entry.');
-      return;
-    }
-
-    if (title.isEmpty) {
-      _showMessage('Please enter a title.');
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('health_entries')
-          .add({
-        'type': _selectedType,
-        'title': title,
-        'description': description,
-        'createdAt': FieldValue.serverTimestamp(),
-        'userId': user.uid,
-      });
-
-      if (!mounted) return;
-
-      _showMessage('Health entry saved successfully.');
-
-      Navigator.pop(context);
-    } on FirebaseException catch (error) {
-      _showMessage(error.message ?? 'Unable to save the health entry.');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final entryTypes = [
+      const _EntryTypeData(
+        title: 'Mood',
+        subtitle: 'Record how you feel today',
+        icon: Icons.mood,
+        isAvailable: true,
+      ),
+      const _EntryTypeData(
+        title: 'Symptom',
+        subtitle: 'Track a symptom or discomfort',
+        icon: Icons.health_and_safety_outlined,
+      ),
+      const _EntryTypeData(
+        title: 'Medication',
+        subtitle: 'Record a medication or dose',
+        icon: Icons.medication_outlined,
+      ),
+      const _EntryTypeData(
+        title: 'Sleep',
+        subtitle: 'Add your sleep duration and quality',
+        icon: Icons.bedtime_outlined,
+      ),
+      const _EntryTypeData(
+        title: 'Water',
+        subtitle: 'Track your water intake',
+        icon: Icons.water_drop_outlined,
+      ),
+      const _EntryTypeData(
+        title: 'Note',
+        subtitle: 'Save a general health note',
+        icon: Icons.note_alt_outlined,
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Add Health Entry'),
+        centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'What would you like to record?',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        children: [
+          const Text(
+            'What would you like to record?',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
-            const SizedBox(height: 24),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedType,
-              decoration: const InputDecoration(
-                labelText: 'Entry type',
-                border: OutlineInputBorder(),
-              ),
-              items: _entryTypes.map((type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
-              onChanged: (value) {
-                if (value == null) return;
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Choose a health category to continue.',
+            style: TextStyle(
+              fontSize: 16,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 24),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: entryTypes.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 14,
+              mainAxisSpacing: 14,
+              childAspectRatio: 0.95,
+            ),
+            itemBuilder: (context, index) {
+              final entryType = entryTypes[index];
 
-                setState(() {
-                  _selectedType = value;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title',
-                border: OutlineInputBorder(),
+              return _EntryTypeCard(
+                data: entryType,
+                onTap: () {
+                  if (entryType.title == 'Mood') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MoodEntryScreen(),
+                      ),
+                    );
+                    return;
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '${entryType.title} tracking is coming next.',
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EntryTypeCard extends StatelessWidget {
+  final _EntryTypeData data;
+  final VoidCallback onTap;
+
+  const _EntryTypeCard({
+    required this.data,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Ink(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: data.isAvailable
+                ? AppColors.primary.withValues(alpha: 0.45)
+                : Colors.transparent,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  data.icon,
+                  size: 30,
+                  color: AppColors.primaryDark,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
+              const SizedBox(height: 14),
+              Text(
+                data.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isSaving ? null : _saveEntry,
-              child: Text(
-                _isSaving ? 'Saving...' : 'Save Entry',
+              const SizedBox(height: 6),
+              Text(
+                data.subtitle,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.3,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _EntryTypeData {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final bool isAvailable;
+
+  const _EntryTypeData({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.isAvailable = false,
+  });
 }
