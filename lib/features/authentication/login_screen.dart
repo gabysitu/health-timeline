@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../dashboard/dashboard_screen.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../main/main_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -46,12 +46,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(
-    builder: (context) => const DashboardScreen(),
-  ),
-);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const MainScreen(),
+        ),
+        (route) => false,
+      );
     } on FirebaseAuthException catch (error) {
       _showMessage(error.message ?? 'Unable to log in.');
     } finally {

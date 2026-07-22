@@ -9,8 +9,8 @@ import '../../widgets/summary_card.dart';
 import '../authentication/login_screen.dart';
 import '../health_entry/add_health_entry_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -40,6 +40,7 @@ class DashboardScreen extends StatelessWidget {
           IconButton(
             onPressed: () => _logout(context),
             icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
           ),
         ],
       ),
@@ -73,17 +74,15 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-
             const Text(
               "Today's Summary",
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
-
             const SizedBox(height: 16),
-
             const Row(
               children: [
                 Expanded(
@@ -103,9 +102,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-
-            SizedBox(height: 12),
-
+            const SizedBox(height: 12),
             const Row(
               children: [
                 Expanded(
@@ -125,19 +122,16 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 30),
-
             const Text(
               'Recent Activity',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
               ),
             ),
-
             const SizedBox(height: 16),
-
             StreamBuilder<QuerySnapshot>(
               stream: firestoreService.getRecentEntries(),
               builder: (context, snapshot) {
@@ -153,7 +147,7 @@ class DashboardScreen extends StatelessWidget {
                   );
                 }
 
-                final docs = snapshot.data!.docs;
+                final docs = snapshot.data?.docs ?? [];
 
                 if (docs.isEmpty) {
                   return const Card(
@@ -175,7 +169,7 @@ class DashboardScreen extends StatelessWidget {
                       type: data['type'] ?? '',
                       title: data['title'] ?? '',
                       description: data['description'] ?? '',
-                      createdAt: data['createdAt'],
+                      createdAt: data['createdAt'] as Timestamp?,
                     );
                   },
                 );
