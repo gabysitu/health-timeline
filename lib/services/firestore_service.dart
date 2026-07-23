@@ -4,31 +4,49 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/health_entry.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  CollectionReference<Map<String, dynamic>> get _entriesCollection {
-    final user = _auth.currentUser;
+  FirestoreService({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
 
-    if (user == null) {
-      throw Exception('User is not logged in.');
+  String? get _currentUserId => _auth.currentUser?.uid;
+
+  CollectionReference<Map<String, dynamic>>? get _healthEntriesCollection {
+    final userId = _currentUserId;
+
+    if (userId == null) {
+      return null;
     }
 
     return _firestore
         .collection('users')
-        .doc(user.uid)
+        .doc(userId)
         .collection('health_entries');
   }
 
-  Stream<List<HealthEntry>> getRecentEntries() {
-    return _entriesCollection
-        .orderBy('createdAt', descending: true)
+  Stream<List<HealthEntry>> getRecentEntries({
+    int limit = 20,
+  }) {
+    final collection = _healthEntriesCollection;
+
+    if (collection == null) {
+      return Stream.value([]);
+    }
+
+    return collection
+        .orderBy(
+          'createdAt',
+          descending: true,
+        )
+        .limit(limit)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
-              .map(
-                (document) => HealthEntry.fromFirestore(document),
-              )
+              .map(HealthEntry.fromFirestore)
               .toList(),
         );
   }
@@ -36,32 +54,66 @@ class FirestoreService {
   Future<List<HealthEntry>> getTodayEntries() async {
     final now = DateTime.now();
 
-    final startOfDay = DateTime(
+    final startOfToday = DateTime(
       now.year,
       now.month,
       now.day,
     );
 
-    final endOfDay = startOfDay.add(
+    final endOfToday = startOfToday.add(
       const Duration(days: 1),
     );
 
-    final snapshot = await _entriesCollection
+    return getEntriesBetween(
+      startDate: startOfToday,
+      endDate: endOfToday,
+      endDateIsExclusive: true,
+    );
+  }
+
+  Future<List<HealthEntry>> getEntriesBetween({
+    required DateTime startDate,
+    required DateTime endDate,
+    bool endDateIsExclusive = false,
+  }) async {
+    final collection = _healthEntriesCollection;
+
+    if (collection == null) {
+      return [];
+    }
+
+    final normalizedStart = DateTime(
+      startDate.year,
+      startDate.month,
+      startDate.day,
+    );
+
+    final normalizedEnd = endDateIsExclusive
+        ? endDate
+        : DateTime(
+            endDate.year,
+            endDate.month,
+            endDate.day,
+          ).add(const Duration(days: 1));
+
+    final snapshot = await collection
         .where(
           'createdAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+          isGreaterThanOrEqualTo:
+              Timestamp.fromDate(normalizedStart),
         )
         .where(
           'createdAt',
-          isLessThan: Timestamp.fromDate(endOfDay),
+          isLessThan: Timestamp.fromDate(normalizedEnd),
         )
-        .orderBy('createdAt', descending: true)
+        .orderBy(
+          'createdAt',
+          descending: true,
+        )
         .get();
 
     return snapshot.docs
-        .map(
-          (document) => HealthEntry.fromFirestore(document),
-        )
+        .map(HealthEntry.fromFirestore)
         .toList();
   }
 }

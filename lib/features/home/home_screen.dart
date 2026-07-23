@@ -7,6 +7,7 @@ import '../../models/health_entry.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/health_entry_card.dart';
 import '../../widgets/summary_card.dart';
+import '../appointment_summary/appointment_summary_screen.dart';
 import '../authentication/login_screen.dart';
 import '../health_entry/add_health_entry_screen.dart';
 
@@ -193,6 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 30),
+
             const Text(
               "Today's Summary",
               style: TextStyle(
@@ -253,6 +255,93 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
 
             const SizedBox(height: 30),
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.35),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.medical_information_outlined,
+                      color: AppColors.primary,
+                      size: 29,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Appointment Summary',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Prepare a structured health summary for your next medical appointment.',
+                    style: TextStyle(
+                      fontSize: 15,
+                      height: 1.45,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const AppointmentSummaryScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.description_outlined),
+                      label: const Text(
+                        'Prepare Report',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
             const Text(
               'Recent Activity',
               style: TextStyle(
@@ -303,9 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       description: entry.description,
                       createdAt: entry.createdAt == null
                           ? null
-                          : Timestamp.fromDate(
-                              entry.createdAt!,
-                            ),
+                          : Timestamp.fromDate(entry.createdAt!),
                     );
                   },
                 );
