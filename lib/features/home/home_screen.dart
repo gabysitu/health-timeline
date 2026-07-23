@@ -257,18 +257,24 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 30),
 
             Container(
-              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.35),
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primary,
+                    AppColors.primary.withValues(alpha: 0.82),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
+                borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
+                    color:
+                        AppColors.primary.withValues(alpha: 0.30),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -276,41 +282,63 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 58,
+                    height: 58,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(16),
+                      color:
+                          Colors.white.withValues(alpha: 0.20),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Icon(
-                      Icons.medical_information_outlined,
-                      color: AppColors.primary,
-                      size: 29,
+                      Icons.description_outlined,
+                      color: Colors.white,
+                      size: 30,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   const Text(
                     'Appointment Summary',
                     style: TextStyle(
-                      fontSize: 21,
+                      color: Colors.white,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   const Text(
-                    'Prepare a structured health summary for your next medical appointment.',
+                    'Transform your health records into a professional report for your next healthcare appointment.',
                     style: TextStyle(
+                      color: Colors.white,
                       fontSize: 15,
                       height: 1.45,
-                      color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 22),
+                  const Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _FeatureChip(label: 'Symptoms'),
+                      _FeatureChip(label: 'Medication'),
+                      _FeatureChip(label: 'Mood'),
+                      _FeatureChip(label: 'Sleep'),
+                      _FeatureChip(label: 'Water'),
+                      _FeatureChip(label: 'Notes'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 52,
                     child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(16),
+                        ),
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -320,21 +348,37 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.description_outlined),
-                      label: const Text(
-                        'Prepare Report',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      icon: const Icon(
+                        Icons.picture_as_pdf_outlined,
                       ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                      label: const Text(
+                        'Generate Appointment Summary',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ready to share with your healthcare professional',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -392,7 +436,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       description: entry.description,
                       createdAt: entry.createdAt == null
                           ? null
-                          : Timestamp.fromDate(entry.createdAt!),
+                          : Timestamp.fromDate(
+                              entry.createdAt!,
+                            ),
                     );
                   },
                 );
@@ -418,6 +464,36 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         icon: const Icon(Icons.add),
         label: const Text('Add Entry'),
+      ),
+    );
+  }
+}
+
+class _FeatureChip extends StatelessWidget {
+  final String label;
+
+  const _FeatureChip({
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
