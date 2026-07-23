@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import 'medication_entry_screen.dart';
 import 'mood_entry_screen.dart';
+import 'sleep_entry_screen.dart';
 import 'symptom_entry_screen.dart';
 import 'water_entry_screen.dart';
 
@@ -32,8 +33,9 @@ class AddHealthEntryScreen extends StatelessWidget {
       ),
       const _EntryTypeData(
         title: 'Sleep',
-        subtitle: 'Add your sleep duration and quality',
+        subtitle: 'Track your sleep',
         icon: Icons.bedtime_outlined,
+        isAvailable: true,
       ),
       const _EntryTypeData(
         title: 'Water',
@@ -92,44 +94,64 @@ class AddHealthEntryScreen extends StatelessWidget {
                 onTap: () async {
                   bool? saved;
 
-                  if (entryType.title == 'Mood') {
-                    saved = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const MoodEntryScreen(),
-                      ),
-                    );
-                  } else if (entryType.title == 'Symptom') {
-                    saved = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SymptomEntryScreen(),
-                      ),
-                    );
-                  } else if (entryType.title == 'Medication') {
-                    saved = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const MedicationEntryScreen(),
-                      ),
-                    );
-                  } else if (entryType.title == 'Water') {
-                    saved = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const WaterEntryScreen(),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '${entryType.title} tracking is coming next.',
+                  switch (entryType.title) {
+                    case 'Mood':
+                      saved = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MoodEntryScreen(),
                         ),
-                      ),
-                    );
-                    return;
+                      );
+                      break;
+
+                    case 'Water':
+                      saved = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WaterEntryScreen(),
+                        ),
+                      );
+                      break;
+
+                    case 'Medication':
+                      saved = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const MedicationEntryScreen(),
+                        ),
+                      );
+                      break;
+
+                    case 'Symptom':
+                      saved = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const SymptomEntryScreen(),
+                        ),
+                      );
+                      break;
+
+                    case 'Sleep':
+                      saved = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const SleepEntryScreen(),
+                        ),
+                      );
+                      break;
+
+                    default:
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${entryType.title} tracking is coming soon.',
+                          ),
+                        ),
+                      );
+                      return;
                   }
 
                   if (saved == true && context.mounted) {
